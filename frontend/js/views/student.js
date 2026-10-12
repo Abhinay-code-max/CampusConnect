@@ -15,13 +15,19 @@
 
     main.innerHTML = `
       <div class="container py-4">
-        <div class="page-header">
+        <div class="page-header d-flex justify-between align-center flex-wrap gap-2">
           <div>
             <h1 class="page-title">Student Dashboard</h1>
             <p class="text-muted">Welcome back, <strong>${window.UI.escapeHtml(user.displayName)}</strong>!</p>
           </div>
-          <div>
-            <a href="#/events" class="btn btn-primary">Browse Events</a>
+          <div class="d-flex align-center gap-2">
+            <!-- Student Dashboard Notification Bell Button -->
+            <button type="button" class="btn btn-outline d-flex align-center gap-2" id="student-dash-bell-btn" title="Events Happening Notifications">
+              <span style="font-size: 1.15rem;">🔔</span>
+              <span>Events Happening</span>
+              <span class="badge badge-danger" id="student-dash-bell-badge" style="display: none;">0</span>
+            </button>
+            <a href="#/events" class="btn btn-primary">Browse All Events</a>
           </div>
         </div>
 
@@ -86,20 +92,45 @@
             </div>
           </div>
         </div>
+
+        <!-- Events Happening Notification Center Section -->
+        <div class="card p-4 mb-4" id="student-events-happening-card">
+          <div class="d-flex justify-between align-center flex-wrap gap-2 mb-3">
+            <div class="d-flex align-center gap-2">
+              <span style="font-size: 1.4rem;">🔔</span>
+              <div>
+                <h2 class="card-title text-navy mb-0">Events Happening &amp; Announcements</h2>
+                <small class="text-muted">Live competitions and events uploaded by campus organizers &amp; admins</small>
+              </div>
+            </div>
+            <a href="#/events" class="btn btn-outline btn-sm">
+              Redirect to Events Catalog &rarr;
+            </a>
+          </div>
+
+          <div id="student-events-happening-list">
+            <div class="loading-container py-3">
+              <div class="spinner-small"></div>
+              <p>Checking for happening events...</p>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
     // Load data
     try {
-      const [regsData, teamsData, invitesData] = await Promise.all([
+      const [regsData, teamsData, invitesData, eventsData] = await Promise.all([
         window.API.student.getRegistrations(1, 100),
         window.API.student.getTeams(),
-        window.API.student.getInvitations()
+        window.API.student.getInvitations(),
+        window.API.events.listPublic({ pageSize: 6, sort: 'startsAt', direction: 'asc' }).catch(() => ({ events: [] }))
       ]);
 
       const activeRegs = (regsData.registrations || []).filter(r => r.registrationStatus !== 'CANCELLED');
       const teams = teamsData.teams || [];
       const invites = invitesData.invitations || [];
+      const publicEvents = eventsData.events || [];
 
       document.getElementById('stat-reg-count').textContent = activeRegs.length;
       document.getElementById('stat-team-count').textContent = teams.length;
@@ -119,6 +150,91 @@
 
       document.getElementById('student-overview-loading').style.display = 'none';
       document.getElementById('student-overview-content').style.display = 'block';
+
+      // Render Dashboard Events Happening List
+      const happeningContainer = document.getElementById('student-events-happening-list');
+      const dashBadge = document.getElementById('student-dash-bell-badge');
+
+      if (happeningContainer) {
+        if (!publicEvents || publicEvents.length === 0) {
+          happeningContainer.innerHTML = `
+            <div class="text-center py-4 text-muted">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">📅</div>
+              <p class="font-medium mb-1">No Events Happening Right Now</p>
+              <p class="text-xs mb-0">Check back soon! You will be notified whenever an organizer uploads a new event.</p>
+            </div>
+          `;
+        } else {
+          let listHtml = '<div class="row gap-3">';
+          publicEvents.slice(0, 4).forEach(ev => {
+            const briefDesc = ev.description && ev.description.trim()
+              ? (ev.description.length > 110 ? ev.description.substring(0, 110) + '...' : ev.description)
+              : 'No description provided yet.';
+            const modeBadge = ev.participationMode === 'TEAM' ? 'Team Event' : 'Individual Event';
+            const dateStr = window.UI && window.UI.formatDateTime ? window.UI.formatDateTime(ev.startsAt) : ev.startsAt;
+
+            listHtml += `
+              <div class="col-6 mb-3">
+                <div class="card p-3 h-100 border d-flex flex-column justify-between bg-surface">
+                  <div>
+                    <div class="d-flex justify-between align-start gap-2 mb-2">
+                      <h3 class="font-bold text-navy mb-0" style="font-size: 1rem;">
+                        🎉 ${window.UI.escapeHtml(ev.eventName)}
+                      </h3>
+                      <span class="badge badge-sm badge-secondary">${window.UI.escapeHtml(modeBadge)}</span>
+                    </div>
+                    <p class="text-xs text-muted mb-2">
+                      <strong>Brief:</strong> ${window.UI.escapeHtml(briefDesc)}
+                    </p>
+                  </div>
+                  <div>
+                    <div class="text-xs text-muted mb-2">
+                      🕒 Starts: <strong>${window.UI.escapeHtml(dateStr)}</strong>
+                    </div>
+                    <a href="#/events/${ev.eventId}" class="btn btn-primary btn-sm w-100 text-center">
+                      Redirect to Event &rarr;
+                    </a>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+          listHtml += '</div>';
+
+          listHtml += `
+            <div class="text-center mt-3 pt-2 border-top">
+              <a href="#/events" class="btn btn-outline btn-sm">
+                View All Events Happening in Catalog &rarr;
+              </a>
+            </div>
+          `;
+
+          happeningContainer.innerHTML = listHtml;
+        }
+      }
+
+      // Sync Dashboard Bell Badge
+      if (dashBadge && publicEvents.length > 0) {
+        dashBadge.textContent = String(publicEvents.length);
+        dashBadge.style.display = 'inline-block';
+      }
+
+      // Bind Dashboard Bell Button Press -> Scrolls to Events or Redirects
+      const dashBellBtn = document.getElementById('student-dash-bell-btn');
+      if (dashBellBtn) {
+        dashBellBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = document.getElementById('student-events-happening-card');
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+            target.classList.add('card-highlight');
+            setTimeout(() => target.classList.remove('card-highlight'), 1800);
+          } else {
+            window.Router.navigate('/events');
+          }
+        });
+      }
+
     } catch (err) {
       document.getElementById('student-overview-loading').innerHTML = `
         <div class="alert alert-error">Failed to load overview: ${window.UI.escapeHtml(err.message)}</div>

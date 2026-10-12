@@ -134,7 +134,7 @@
 
               <div class="btn-group w-100 mt-1">
                 ${isDraft ? `
-                  <button class="btn btn-success btn-sm flex-1 btn-publish-event" data-id="${event.eventId}" data-name="${window.UI.escapeHtml(event.eventName)}">
+                  <button class="btn btn-success btn-sm flex-1 btn-publish-event" data-id="${event.eventId}" data-name="${window.UI.escapeHtml(event.eventName)}" data-desc="${window.UI.escapeHtml(event.description || '')}">
                     Publish Event
                   </button>
                   <a href="#/organizer/events/${event.eventId}/edit" class="btn btn-outline btn-sm flex-1 text-center">
@@ -193,7 +193,14 @@
           window.UI.setButtonLoading(btn, true, 'Publishing...');
           try {
             await window.API.organizer.publishEvent(eventId);
-            window.UI.showToast(`"${eventName}" is now published!`, 'success');
+            if (window.Notifications) {
+              window.Notifications.broadcastNewEvent({
+                eventId: eventId,
+                eventName: eventName,
+                description: btn.dataset.desc || ''
+              });
+            }
+            window.UI.showToast(`"${eventName}" is now published and students notified!`, 'success');
             loadOrganizerEvents();
           } catch (err) {
             window.UI.showToast(err.message, 'error');
@@ -370,10 +377,19 @@
               </div>
             </div>
 
+            ${!isEdit ? `
+              <div class="form-check mt-3 p-3 bg-surface rounded border d-flex align-center gap-2">
+                <input type="checkbox" id="event-publish-now" class="form-check-input" checked>
+                <label for="event-publish-now" class="form-check-label font-medium text-navy mb-0" style="cursor: pointer;">
+                  📢 Publish immediately and notify all students that this event is happening
+                </label>
+              </div>
+            ` : ''}
+
             <div class="d-flex justify-between align-center mt-4 pt-3 border-top">
               <a href="#/organizer/dashboard" class="btn btn-outline">Cancel</a>
               <button type="submit" id="btn-save-event" class="btn btn-primary btn-lg">
-                ${isEdit ? 'Save Changes' : 'Create Draft Event'}
+                ${isEdit ? 'Save Changes' : 'Create & Upload Event'}
               </button>
             </div>
           </form>
@@ -450,8 +466,21 @@
           await window.API.organizer.updateEvent(eventId, payload);
           window.UI.showToast('Event updated successfully.', 'success');
         } else {
-          await window.API.organizer.createEvent(payload);
-          window.UI.showToast('Event created in DRAFT state. You may now configure criteria or publish.', 'success');
+          const res = await window.API.organizer.createEvent(payload);
+          const publishNowCheck = document.getElementById('event-publish-now');
+          if (publishNowCheck && publishNowCheck.checked && res && res.event) {
+            try {
+              await window.API.organizer.publishEvent(res.event.eventId);
+              if (window.Notifications) {
+                window.Notifications.broadcastNewEvent(res.event);
+              }
+              window.UI.showToast(`🎉 "${name}" uploaded & published! Students have been notified.`, 'success');
+            } catch (pubErr) {
+              window.UI.showToast('Event created in DRAFT. (Note: ' + pubErr.message + ')', 'warning');
+            }
+          } else {
+            window.UI.showToast('Event created in DRAFT state.', 'info');
+          }
         }
         window.Router.navigate('/organizer/dashboard');
       } catch (err) {

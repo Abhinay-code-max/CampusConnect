@@ -99,6 +99,9 @@
   window.API.onAuthChange((user) => {
     currentUser = user;
     updateNavUI(user);
+    if (window.Notifications && window.Notifications.fetchEvents) {
+      window.Notifications.fetchEvents();
+    }
   });
 
   window.Auth = {
