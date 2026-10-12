@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusConnect | College Event Platform</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header & Navigation -->
+  <header class="site-header">
+    <div class="container navbar">
+      <a href="#/" class="brand-link">
+        <span class="brand-icon">🎓</span>
+        <span class="brand-title">CampusConnect</span>
+        <span class="brand-tag">Platform</span>
+      </a>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation menu">
+        &#9776;
+      </button>
+
+      <!-- Main Navigation Links -->
+      <nav class="nav-links" id="main-nav-links">
+        <a href="#/" class="nav-link" data-route="/">Home</a>
+        <a href="#/events" class="nav-link" data-route="/events">Events Catalog</a>
+
+        <!-- Dynamic Role Navigation Items Container -->
+        <div id="role-nav-links" class="d-flex align-center gap-2"></div>
+
+        <!-- Guest Links (Visible when logged out) -->
+        <div id="guest-nav-items" class="d-flex align-center gap-2">
+          <a href="#/login" class="nav-link" data-route="/login">Log In</a>
+          <a href="#/register" class="btn btn-primary btn-sm" data-route="/register">Register</a>
+        </div>
+
+        <!-- Authenticated Links (Visible when logged in) -->
+        <div id="auth-nav-items" class="d-flex align-center gap-2" style="display: none;">
+          <div class="nav-user-badge">
+            <span class="user-name-text" id="user-display-name">User</span>
+            <span class="role-badge" id="user-role-badge">STUDENT</span>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-header-logout" style="color: #ffffff; border-color: rgba(255,255,255,0.3);">
+            Log Out
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main id="app-main" role="main" tabindex="-1">
+    <div class="loading-container py-5">
+      <div class="spinner"></div>
+      <p>Initializing CampusConnect...</p>
+    </div>
+  </main>
+
+  <!-- Global Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Global Accessible Modal Container -->
+  <div id="modal-overlay" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog" id="modal-content"></div>
+  </div>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div>
+        <p class="font-medium text-white mb-1">CampusConnect &copy; 2026</p>
+        <p class="text-xs text-muted mb-0">Engineered for collegiate hackathons, competitions, transparent judging, and verified results.</p>
+      </div>
+      <div>
+        <span class="text-xs text-muted">Backend Context: <code>/CampusConnect/api</code></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Vanilla JavaScript Application Modules -->
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/router.js"></script>
+
+  <!-- View Controllers -->
+  <script src="js/views/home.js"></script>
+  <script src="js/views/events.js"></script>
+  <script src="js/views/event-detail.js"></script>
+  <script src="js/views/auth.js"></script>
+  <script src="js/views/student.js"></script>
+  <script src="js/views/organizer.js"></script>
+  <script src="js/views/judge.js"></script>
+  <script src="js/views/admin.js"></script>
+
+  <!-- Application Entrypoint -->
+  <script src="js/app.js"></script>
+</body>
+</html>

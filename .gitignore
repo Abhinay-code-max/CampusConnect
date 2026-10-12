@@ -1,0 +1,23 @@
+# Local configuration
+.m2/
+.vscode/
+.idea/
+
+# Java build files
+target/
+*.class
+*.war
+
+# Oracle configuration
+campusconnect_export.par
+tnsnames.ora
+db.properties
+.env
+.env.*
+*.key
+*.pem
+*.wallet
+
+# Logs and temporary files
+*.log
+*.tmp
